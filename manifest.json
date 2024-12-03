@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
   "name": "English Word Recapped",
-  "version": "1.2",
+  "version": "1.2.1",
   "description": "Helps you recap and review English words you've learned",
   "permissions": [
     "storage",
     "activeTab",
-    "contextMenus"
+    "contextMenus",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup/popup.html"
@@ -14,8 +18,10 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "exclude_matches": ["chrome://*"],
       "css": ["content/content.css"],
-      "js": ["content/content.js"]
+      "js": ["content/content.js"],
+      "run_at": "document_idle"
     }
   ],
   "background": {
