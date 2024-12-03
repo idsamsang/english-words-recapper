@@ -203,6 +203,12 @@ function highlightTextNode(node, regex) {
       
       el.addEventListener('mouseenter', (e) => {
         e.stopPropagation(); // Stop event bubbling
+        
+        // Check if this word is inside a popup
+        if (e.target.closest('.word-popup')) {
+          return; // Don't create popup for words inside popups
+        }
+        
         currentHighlightedElement = el;
         if (hoverTimer) {
           clearTimeout(hoverTimer);
@@ -215,7 +221,10 @@ function highlightTextNode(node, regex) {
 
       el.addEventListener('mouseleave', (e) => {
         e.stopPropagation(); // Stop event bubbling
-        removePopupWithDelay();
+        // Only remove popup if we're not hovering a word inside a popup
+        if (!e.target.closest('.word-popup')) {
+          removePopupWithDelay();
+        }
       });
 
       // Prevent link clicks when clicking highlighted words in links
@@ -256,60 +265,45 @@ function shouldUsePopupDarkMode(position) {
 // Function to create word popup
 function createWordPopup(word, rect) {
   if (currentPopup) {
-    if (currentHighlightedElement && 
-        currentHighlightedElement.dataset.original === word) {
-      return;
-    }
     currentPopup.remove();
+    currentPopup = null;
   }
-
-  const popup = document.createElement('div');
-  popup.className = 'word-popup';
-  
-  // Calculate popup position
-  const viewportHeight = window.innerHeight;
-  const popupX = rect.left + window.scrollX;
-  let popupY = rect.top + window.scrollY;
-  
-  // Check background at popup position
-  const useDarkMode = shouldUsePopupDarkMode({
-    x: rect.left,
-    y: rect.top - (rect.top > viewportHeight / 2 ? 100 : 0) // Check above or below word
-  });
-  
-  if (useDarkMode) {
-    popup.classList.add('dark-mode');
-  }
-
-  // Position popup above or below the word depending on space
-  const spaceAbove = rect.top;
-  const preferAbove = spaceAbove > viewportHeight / 2;
-  
-  if (preferAbove) {
-    popup.style.transform = 'translateY(-100%)';
-    popupY -= 10;
-  } else {
-    popup.style.transform = 'translateY(10px)';
-    popupY += rect.height;
-  }
-  
-  popup.style.left = `${popupX}px`;
-  popup.style.top = `${popupY}px`;
 
   const wordInfo = wordData.get(word.toLowerCase());
   if (!wordInfo) return;
 
+  const popup = document.createElement('div');
+  popup.className = `word-popup ${isDarkMode() ? 'dark-mode' : ''} ${hasDarkBackground(currentHighlightedElement) ? 'high-contrast' : ''}`;
+  
+  // Fix meanings extraction and handle line breaks
+  const englishMeaning = wordInfo.englishMeaning || '';
+  const chineseMeaning = wordInfo.chineseMeaning || '';
+
   popup.innerHTML = `
     <div class="popup-content">
       <div class="word-header">
-        <strong>${word}</strong>
+        <strong>${wordInfo.word}</strong>
         <div class="popup-actions">
           <button class="delete-word" title="Delete word">🗑️</button>
         </div>
       </div>
       <div class="word-meanings">
-        ${wordInfo.englishMeaning ? `<div class="english-meaning">${wordInfo.englishMeaning.split('\n').join('<br>')}</div>` : ''}
-        ${wordInfo.chineseMeaning ? `<div class="chinese-meaning">${wordInfo.chineseMeaning.split('\n').join('<br>')}</div>` : ''}
+        <div class="meaning-section">
+          ${englishMeaning ? 
+            `<div class="english-meaning">${englishMeaning.split('\n').join('<br>')}</div>
+             <button class="edit-btn" title="Edit English meaning">✏️</button>` :
+            `<div class="english-meaning empty">Add English meaning</div>
+             <button class="edit-btn" title="Add English meaning">➕</button>`
+          }
+        </div>
+        <div class="meaning-section">
+          ${chineseMeaning ? 
+            `<div class="chinese-meaning">${chineseMeaning.split('\n').join('<br>')}</div>
+             <button class="edit-btn" title="Edit Chinese meaning">✏️</button>` :
+            `<div class="chinese-meaning empty">Add Chinese meaning</div>
+             <button class="edit-btn" title="Add Chinese meaning">➕</button>`
+          }
+        </div>
       </div>
       <div class="popup-buttons">
         <button class="know-btn">Know</button>
@@ -321,7 +315,34 @@ function createWordPopup(word, rect) {
   document.body.appendChild(popup);
   currentPopup = popup;
 
+  // Position the popup
+  const popupRect = popup.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // Calculate horizontal position
+  let left = rect.left + window.scrollX;
+  if (left + popupRect.width > viewportWidth - 20) {
+    left = viewportWidth - popupRect.width - 20;
+  }
+  if (left < 20) left = 20;
+
+  // Calculate vertical position
+  let top = rect.bottom + window.scrollY + 5;
+  if (top + popupRect.height > window.scrollY + viewportHeight - 20) {
+    top = rect.top + window.scrollY - popupRect.height - 5;
+  }
+
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+
   // Add event listeners
+  setupPopupEventListeners(popup, word, wordInfo);
+}
+
+// Function to setup popup event listeners
+function setupPopupEventListeners(popup, word, wordInfo) {
+  // Mouse enter/leave events for popup
   popup.addEventListener('mouseenter', () => {
     if (hoverTimer) {
       clearTimeout(hoverTimer);
@@ -333,6 +354,7 @@ function createWordPopup(word, rect) {
     removePopupWithDelay();
   });
 
+  // Delete word button
   popup.querySelector('.delete-word').addEventListener('click', async (e) => {
     e.stopPropagation();
     if (confirm(`Are you sure you want to delete "${word}"?`)) {
@@ -357,6 +379,110 @@ function createWordPopup(word, rect) {
     }
   });
 
+  // Edit buttons
+  popup.querySelectorAll('.edit-btn').forEach((btn, index) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const meaningSection = btn.parentElement;
+      const isEnglish = index === 0;
+      const currentMeaning = isEnglish ? wordInfo.englishMeaning || '' : wordInfo.chineseMeaning || '';
+      
+      // Add editing classes
+      meaningSection.classList.add('editing');
+      popup.classList.add('editing-mode');
+      
+      // Clear any existing hide timer
+      if (hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+      
+      // Hide the edit button and meaning div
+      btn.style.display = 'none';
+      const meaningDiv = meaningSection.querySelector(isEnglish ? '.english-meaning' : '.chinese-meaning');
+      if (meaningDiv) {
+        meaningDiv.style.display = 'none';
+      }
+
+      // Create edit interface
+      const editInterface = document.createElement('div');
+      editInterface.className = 'edit-interface';
+      editInterface.innerHTML = `
+        <textarea class="meaning-input" placeholder="${isEnglish ? 'Enter English meaning' : 'Enter Chinese meaning'}">${currentMeaning}</textarea>
+        <div class="edit-actions">
+          <button class="save-btn">Save</button>
+          <button class="cancel-btn">Cancel</button>
+        </div>
+      `;
+      
+      meaningSection.appendChild(editInterface);
+
+      // Focus the textarea
+      const textarea = editInterface.querySelector('.meaning-input');
+      textarea.focus();
+
+      // Save button handler
+      editInterface.querySelector('.save-btn').addEventListener('click', async () => {
+        const newMeaning = textarea.value.trim();
+        const storage = await chrome.storage.local.get(['words']);
+        const words = storage.words || [];
+        const wordIndex = words.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
+        
+        if (wordIndex !== -1) {
+          if (isEnglish) {
+            words[wordIndex].englishMeaning = newMeaning;
+          } else {
+            words[wordIndex].chineseMeaning = newMeaning;
+          }
+          await chrome.storage.local.set({ words });
+          
+          // Update local data
+          wordInfo = words[wordIndex];
+          wordData.set(word.toLowerCase(), wordInfo);
+          
+          // Update display
+          if (meaningDiv) {
+            meaningDiv.innerHTML = newMeaning ? newMeaning.split('\n').join('<br>') : `Add ${isEnglish ? 'English' : 'Chinese'} meaning`;
+            meaningDiv.className = `${isEnglish ? 'english' : 'chinese'}-meaning${!newMeaning ? ' empty' : ''}`;
+            meaningDiv.style.display = 'block';
+          }
+          
+          // Update edit button
+          btn.textContent = newMeaning ? '✏️' : '➕';
+          btn.title = newMeaning ? `Edit ${isEnglish ? 'English' : 'Chinese'} meaning` : `Add ${isEnglish ? 'English' : 'Chinese'} meaning`;
+          btn.style.display = 'block';
+          
+          // Remove editing classes
+          meaningSection.classList.remove('editing');
+          popup.classList.remove('editing-mode');
+          editInterface.remove();
+        }
+      });
+
+      // Cancel button handler
+      editInterface.querySelector('.cancel-btn').addEventListener('click', () => {
+        if (meaningDiv) {
+          meaningDiv.style.display = 'block';
+        }
+        btn.style.display = 'block';
+        // Remove editing classes
+        meaningSection.classList.remove('editing');
+        popup.classList.remove('editing-mode');
+        editInterface.remove();
+      });
+
+      // Prevent popup from disappearing when clicking in the textarea
+      textarea.addEventListener('mouseenter', (e) => {
+        e.stopPropagation();
+        if (hoverTimer) {
+          clearTimeout(hoverTimer);
+          hoverTimer = null;
+        }
+      });
+    });
+  });
+
+  // Know/Don't Know buttons
   popup.querySelector('.know-btn').addEventListener('click', async (e) => {
     e.stopPropagation();
     await updateWordFamiliarity(word, true);
@@ -383,6 +509,10 @@ function removePopupWithDelay() {
   }
   hoverTimer = setTimeout(() => {
     if (currentPopup) {
+      // Don't remove popup if either meaning section is in editing mode
+      if (currentPopup.querySelector('.meaning-section.editing')) {
+        return;
+      }
       currentPopup.remove();
       currentPopup = null;
       currentHighlightedElement = null;

@@ -151,9 +151,18 @@ button:hover {
 }
 
 /* Word List Section */
+.list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .search-container {
   position: relative;
-  width: 150px;
+  width: 140px;
+  flex: 0 0 140px;
 }
 
 #searchWord {
@@ -186,20 +195,14 @@ button:hover {
   display: block;
 }
 
-.list-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
 #sortBy {
-  flex: 1;
-  min-width: 120px;
-  padding: 6px;
+  width: 140px;
+  flex: 0 0 140px;
+  padding: 6px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 13px;
+  background-color: white;
 }
 
 .word-list {
@@ -266,44 +269,53 @@ button:hover {
   background-color: rgba(255, 59, 48, 0.1);
 }
 
+/* Controls Section */
+.controls {
+  margin-top: 8px;
+}
+
+#toggleHighlight {
+  width: 100%;
+  padding: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* When data-enabled is false, it means the button shows "Enable Highlighting" */
+#toggleHighlight[data-enabled="false"] {
+  background-color: #34C759;
+}
+
+#toggleHighlight[data-enabled="false"]:hover {
+  background-color: #2DB14F;
+}
+
+/* When data-enabled is true, it means the button shows "Disable Highlighting" */
+#toggleHighlight[data-enabled="true"] {
+  background-color: #FF3B30;
+}
+
+#toggleHighlight[data-enabled="true"]:hover {
+  background-color: #D63029;
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
-  body {
-    background-color: #1c1c1e;
-    color: #ffffff;
+  /* Enable button (dark mode) */
+  #toggleHighlight[data-enabled="false"] {
+    background-color: #30D158;
   }
 
-  h1 {
-    color: #ffffff;
+  #toggleHighlight[data-enabled="false"]:hover {
+    background-color: #28B44C;
   }
 
-  h2 {
-    color: #cccccc;
+  /* Disable button (dark mode) */
+  #toggleHighlight[data-enabled="true"] {
+    background-color: #FF453A;
   }
 
-  .color-sample.light-mode {
-    display: none;
-  }
-
-  .color-sample.dark-mode {
-    display: block;
-  }
-
-  input, select {
-    background-color: #2c2c2e;
-    border-color: #3c3c3e;
-    color: #ffffff;
-  }
-
-  .word-list {
-    border-color: #3c3c3e;
-  }
-
-  .word-item {
-    border-bottom-color: #3c3c3e;
-  }
-
-  .meanings {
-    color: #cccccc;
+  #toggleHighlight[data-enabled="true"]:hover {
+    background-color: #D63D34;
   }
 } 

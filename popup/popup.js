@@ -260,17 +260,16 @@ downloadTemplateButton.addEventListener('click', () => {
 toggleHighlightButton.addEventListener('click', async () => {
   isHighlightingEnabled = !isHighlightingEnabled;
   await chrome.storage.local.set({ highlightingEnabled: isHighlightingEnabled });
+  updateToggleButton();
   
   // Send message to content script
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab?.id) {
     chrome.tabs.sendMessage(tab.id, { 
-      action: 'toggleHighlight', 
-      enabled: isHighlightingEnabled 
+      action: 'toggleHighlight',
+      enabled: isHighlightingEnabled
     });
   }
-  
-  updateToggleButton();
 });
 
 // Sort change handler
@@ -357,10 +356,8 @@ function sortWords(words, sortBy) {
 
 // Update toggle button state
 function updateToggleButton() {
-  toggleHighlightButton.textContent = isHighlightingEnabled ? 
-    'Disable Highlighting' : 'Enable Highlighting';
-  toggleHighlightButton.className = isHighlightingEnabled ? 
-    'active' : '';
+  toggleHighlightButton.textContent = isHighlightingEnabled ? 'Disable Highlighting' : 'Enable Highlighting';
+  toggleHighlightButton.setAttribute('data-enabled', isHighlightingEnabled);
 }
 
 // Create word element (your existing createWordElement function)

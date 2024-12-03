@@ -30,11 +30,14 @@ a .highlighted-word {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   z-index: 10000;
   min-width: 200px;
+  max-width: 300px;
+  width: max-content;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   backdrop-filter: blur(8px);
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.2s, transform 0.2s;
+  box-sizing: border-box;
 }
 
 /* Dark mode popup */
@@ -83,6 +86,8 @@ a .highlighted-word {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .word-header {
@@ -111,6 +116,115 @@ a .highlighted-word {
 .word-meanings {
   font-size: 14px;
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.meaning-section {
+  position: relative;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.english-meaning,
+.chinese-meaning {
+  padding: 8px;
+  padding-right: 32px;
+  border-radius: 4px;
+  margin: 4px 0;
+  background: rgba(0, 0, 0, 0.02);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.english-meaning.empty,
+.chinese-meaning.empty {
+  color: #999;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.01);
+  cursor: pointer;
+}
+
+.dark-mode .english-meaning.empty,
+.dark-mode .chinese-meaning.empty {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.edit-interface {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4px;
+}
+
+.meaning-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 4px 0;
+  resize: vertical;
+  min-height: 60px;
+  background: white;
+  font-family: inherit;
+}
+
+.dark-mode .meaning-input {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.meaning-input:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+}
+
+.dark-mode .meaning-input:focus {
+  border-color: #0A84FF;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.save-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.save-btn {
+  background-color: #34C759;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #2DB14F;
+}
+
+.cancel-btn {
+  background-color: #FF3B30;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #D63029;
 }
 
 .popup-buttons {
@@ -143,4 +257,41 @@ a .highlighted-word {
 
 .dont-know-btn:hover {
   background-color: #D63029;
+}
+
+/* Ensure highlighted words in popups don't trigger new popups */
+.word-popup .highlighted-word {
+  cursor: text !important;
+  pointer-events: none !important;
+}
+
+.word-popup .highlighted-word:hover {
+  filter: none;
+}
+
+.edit-btn {
+  position: absolute;
+  right: 4px;
+  top: 8px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.dark-mode .english-meaning,
+.dark-mode .chinese-meaning {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Hide Know/Don't Know buttons when editing */
+.word-popup.editing-mode .popup-buttons {
+  display: none !important;
+}
+
+.word-popup.editing-mode .word-meanings {
+  margin-bottom: 0;
 } 
