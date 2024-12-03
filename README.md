@@ -11,3 +11,35 @@ A Chrome extension for learning and reviewing English words while browsing. High
 - CSV import/export functionality
 - Search and sort capabilities
 - System theme integration
+
+## Installation
+
+1. Clone this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right
+4. Click "Load unpacked" and select the extension directory
+
+## Usage
+
+- Words are automatically highlighted while browsing
+- Hover over highlighted words to see their meanings
+- Use the popup to manage your word list and track progress
+- Import/export words using CSV format
+
+## Development
+
+This extension is built with vanilla JavaScript and uses Chrome Extension Manifest V3.
+
+## Version History
+
+- v1.1 - Current version
+  - Improved dark mode support
+  - Added hover functionality for word popups
+  - Fixed highlighting issues
+  - Enhanced search and sort functionality
+
+- v1.0 - Initial release
+  - Basic word highlighting
+  - Word management
+  - CSV import/export
+  - Dark mode support
