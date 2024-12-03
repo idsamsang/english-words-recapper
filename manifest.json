@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "English Word Recapped",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Helps you recap and review English words you've learned",
   "permissions": [
     "storage",
