@@ -1,0 +1,146 @@
+.highlighted-word {
+  border-radius: 2px;
+  cursor: pointer !important;
+  padding: 0 2px;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto !important;
+}
+
+.highlighted-word:hover {
+  filter: brightness(1.2);
+}
+
+/* Ensure highlighted words in links are clickable */
+a .highlighted-word {
+  position: relative;
+  z-index: 10000;
+  pointer-events: auto !important;
+}
+
+/* Light mode popup */
+.word-popup {
+  position: absolute;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10000;
+  min-width: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  backdrop-filter: blur(8px);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* Dark mode popup */
+.word-popup.dark-mode {
+  background: rgba(28, 28, 30, 0.95);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.word-popup.dark-mode .word-meanings {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.word-popup.dark-mode .english-meaning,
+.word-popup.dark-mode .chinese-meaning {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.word-popup.dark-mode .popup-buttons button {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.word-popup.high-contrast {
+  background: rgba(18, 18, 18, 0.98);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.word-popup.dark-mode .close-popup,
+.word-popup.dark-mode .delete-word {
+  color: #8e8e93;
+}
+
+.word-popup.dark-mode .know-btn {
+  background-color: #34C759;
+}
+
+.word-popup.dark-mode .dont-know-btn {
+  background-color: #FF453A;
+}
+
+/* Popup content styles */
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.word-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color, #eee);
+  padding-bottom: 8px;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.close-popup,
+.delete-word {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.word-meanings {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.popup-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.popup-buttons button {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+  color: white;
+}
+
+.know-btn {
+  background-color: #34C759;
+}
+
+.know-btn:hover {
+  background-color: #2DB14F;
+}
+
+.dont-know-btn {
+  background-color: #FF3B30;
+}
+
+.dont-know-btn:hover {
+  background-color: #D63029;
+} 

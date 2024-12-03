@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body {
+      width: auto;
+      min-width: 300px;
+    }
+    .container {
+      padding: 16px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    #cancelBtn {
+      background-color: #8E8E93;
+    }
+    #cancelBtn:hover {
+      background-color: #7A7A7F;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Add New Word</h1>
+    <div class="add-word-section">
+      <input type="text" id="newWord" placeholder="Word" readonly>
+      <input type="text" id="englishMeaning" placeholder="English meaning" autofocus>
+      <input type="text" id="chineseMeaning" placeholder="Chinese meaning">
+      <div class="actions">
+        <button id="addWord">Add Word</button>
+        <button id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script src="quick-add.js"></script>
+</body>
+</html> 

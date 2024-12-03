@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>English Word Recapped</h1>
+    
+    <!-- Statistics Section -->
+    <div class="stats-section">
+      <h2>Learning Progress</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value" id="totalWords">0</span>
+          <span class="stat-label">Total Words</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="masteredWords">0</span>
+          <span class="stat-label">Mastered</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="reviewNeeded">0</span>
+          <span class="stat-label">Need Review</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Highlight Colors Legend -->
+    <div class="familiarity-legend">
+      <h2>Highlight Colors</h2>
+      <div class="legend-items">
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFE58F;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.8);"></span>
+          <span class="legend-label">New Word (0)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFF0B3;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.65);"></span>
+          <span class="legend-label">Learning (1)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFF4C1;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.5);"></span>
+          <span class="legend-label">Familiar (2)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFF8D6;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.35);"></span>
+          <span class="legend-label">Known (3)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFFBE8;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.25);"></span>
+          <span class="legend-label">Well Known (4)</span>
+        </div>
+        <div class="legend-item">
+          <span class="color-sample light-mode" style="background-color: #FFFEFC;"></span>
+          <span class="color-sample dark-mode" style="background-color: rgba(255, 196, 0, 0.15);"></span>
+          <span class="legend-label">Mastered (5)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add New Word Section -->
+    <div class="add-word-section">
+      <h2>Add New Word</h2>
+      <input type="text" id="newWord" placeholder="Enter word">
+      <input type="text" id="englishMeaning" placeholder="English meaning (optional)">
+      <input type="text" id="chineseMeaning" placeholder="Chinese meaning (optional)">
+      <button id="addWord">Add Word</button>
+    </div>
+
+    <!-- Bulk Import Section -->
+    <div class="bulk-import-section">
+      <h2>Bulk Import</h2>
+      <div class="csv-info">
+        Format: word,english_meaning,chinese_meaning
+      </div>
+      <div class="import-controls">
+        <input type="file" id="csvFile" accept=".csv" style="display: none">
+        <button id="importCsv">Import CSV</button>
+        <button id="downloadTemplate">Get Template</button>
+      </div>
+    </div>
+
+    <!-- Word List Section -->
+    <div class="word-list-section">
+      <h2>Learned Words</h2>
+      <div class="list-controls">
+        <div class="search-container">
+          <input type="text" id="searchWord" placeholder="Search words...">
+          <button id="clearSearch" title="Clear search">×</button>
+        </div>
+        <select id="sortBy">
+          <option value="familiarity">Sort by Familiarity</option>
+          <option value="alphabetical">Sort Alphabetically</option>
+          <option value="recent">Most Recent</option>
+        </select>
+      </div>
+      <div id="wordList" class="word-list">
+        <!-- Words will be dynamically added here -->
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="toggleHighlight">Toggle Highlighting</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
