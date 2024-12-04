@@ -34,7 +34,13 @@ This extension is built with vanilla JavaScript and uses Chrome Extension Manife
 
 ## Version History
 
-- v1.2 - Current version
+- v1.2.1 - Current version
+  - Fixed highlighting toggle on Chrome pages
+  - Improved error handling for content script
+  - Added proper tab permissions
+  - Enhanced extension stability
+
+- v1.2
   - Added in-popup word meaning editing
   - Fixed popup width and content wrapping
   - Improved highlighting toggle button colors
