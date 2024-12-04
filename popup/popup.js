@@ -258,17 +258,30 @@ downloadTemplateButton.addEventListener('click', () => {
 
 // Toggle highlighting
 toggleHighlightButton.addEventListener('click', async () => {
-  isHighlightingEnabled = !isHighlightingEnabled;
-  await chrome.storage.local.set({ highlightingEnabled: isHighlightingEnabled });
-  updateToggleButton();
-  
-  // Send message to content script
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { 
-      action: 'toggleHighlight',
-      enabled: isHighlightingEnabled
-    });
+  try {
+    isHighlightingEnabled = !isHighlightingEnabled;
+    await chrome.storage.local.set({ highlightingEnabled: isHighlightingEnabled });
+    updateToggleButton();
+    
+    // Get active tab
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+    
+    if (currentTab?.id && currentTab.url && !currentTab.url.startsWith('chrome://')) {
+      try {
+        await chrome.tabs.sendMessage(currentTab.id, { 
+          action: 'toggleHighlight',
+          enabled: isHighlightingEnabled
+        });
+      } catch (error) {
+        // If content script is not loaded, reload the page
+        if (error.message.includes('Receiving end does not exist')) {
+          chrome.tabs.reload(currentTab.id);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error toggling highlight:', error);
   }
 });
 

@@ -5,44 +5,22 @@ function getStemmedWord(word) {
   // Only stem if the word is long enough
   if (word.length <= 3) return word;
   
-  // Handle -ing forms first (before handling other suffixes)
-  if (word.endsWith('ing')) {
-    // Double consonant + ing (e.g., running -> run)
-    if (word.length > 6 && word[word.length - 4] === word[word.length - 5]) {
-      return word.slice(0, -4);
-    }
-    // Words ending with 'e' + ing (e.g., plunging -> plunge)
-    if (word.length > 5) {
-      return word.slice(0, -3) + 'e';
-    }
-    // Normal -ing
-    return word.slice(0, -3);
-  }
+  // Store original word to check against final result
+  const originalWord = word;
   
   // Handle plural forms
-  if (word.endsWith('ies') && word.length > 4) {
-    return word.slice(0, -3) + 'y';
-  }
-  if (word.endsWith('es') && word.length > 4) {
-    return word.slice(0, -2);
-  }
-  if (word.endsWith('s') && word.length > 4) {
-    return word.slice(0, -1);
+  if (word.length > 4) {
+    if (word.endsWith('ies')) {
+      word = word.slice(0, -3) + 'y';  // stories -> story
+    } else if (word.endsWith('es')) {
+      word = word.slice(0, -2);  // boxes -> box
+    } else if (word.endsWith('s')) {
+      word = word.slice(0, -1);  // cats -> cat
+    }
   }
   
-  // Handle -ed forms
-  if (word.endsWith('ed')) {
-    // Double consonant + ed (e.g., stopped -> stop)
-    if (word.length > 5 && word[word.length - 3] === word[word.length - 4]) {
-      return word.slice(0, -3);
-    }
-    // Words ending with 'e' + ed (e.g., loved -> love)
-    if (word.length > 4) {
-      return word.slice(0, -2);
-    }
-    // Normal -ed
-    return word.slice(0, -2);
-  }
+  // If stemming would make the word too short, return original
+  if (word.length <= 2) return originalWord;
   
   return word;
 }
@@ -119,8 +97,16 @@ function getHighlightColor(familiarity) {
   return colors[familiarity] || colors[0];
 }
 
-// Process text in chunks
-function* textNodesUnder(node) {
+// Function to get all text nodes under a node
+function textNodesUnder(node) {
+  let all = [];
+  
+  // Skip the word popup element and its children
+  if (node.id === 'word-popup' || 
+      (node.parentElement && node.parentElement.id === 'word-popup')) {
+    return all;
+  }
+
   const walk = document.createTreeWalker(
     node,
     NodeFilter.SHOW_TEXT,
@@ -129,58 +115,172 @@ function* textNodesUnder(node) {
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         
+        // Skip script, style, and already highlighted elements
         const tagName = parent.tagName.toLowerCase();
-        if (tagName === 'script' || tagName === 'style' || 
-            tagName === 'noscript' || tagName === 'textarea' ||
-            parent.classList.contains('highlighted-word')) {
+        if (tagName === 'script' || 
+            tagName === 'style' || 
+            tagName === 'noscript' || 
+            tagName === 'textarea' ||
+            parent.classList.contains('highlighted-word') ||
+            parent.id === 'word-popup' ||
+            parent.closest('#word-popup')) {
           return NodeFilter.FILTER_REJECT;
         }
+        
+        // Skip empty text nodes
+        if (!node.nodeValue.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
         return NodeFilter.FILTER_ACCEPT;
       }
-    },
-    false
+    }
   );
 
   let textNode;
   while (textNode = walk.nextNode()) {
-    yield textNode;
+    all.push(textNode);
   }
+  
+  return all;
 }
 
 // Function to highlight words in the page
 async function highlightWords(words) {
-  if (!isHighlightingEnabled || words.size === 0) return;
+  if (!isHighlightingEnabled || !words || words.size === 0) return;
 
-  const wordPattern = Array.from(words.keys())
-    .map(word => `\\b${word}\\b`)
-    .join('|');
-
-  const regex = new RegExp(wordPattern, 'gi');
-  
-  const nodes = Array.from(textNodesUnder(document.body));
-  const CHUNK_SIZE = 50;
-  
-  for (let i = 0; i < nodes.length; i += CHUNK_SIZE) {
-    const chunk = nodes.slice(i, i + CHUNK_SIZE);
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        chunk.forEach(node => highlightTextNode(node, regex));
-        resolve();
-      });
+  try {
+    // Create a map of variations to original words
+    const wordVariations = new Map();
+    words.forEach((wordInfo, word) => {
+      const wordLower = word.toLowerCase();
+      
+      // Add original word and its lowercase version
+      wordVariations.set(wordLower, wordInfo);
+      
+      // Add plural variations
+      if (!wordLower.endsWith('s')) {
+        // Regular plural
+        wordVariations.set(wordLower + 's', wordInfo);
+        
+        // Special cases for -y endings
+        if (wordLower.endsWith('y')) {
+          const withoutY = wordLower.slice(0, -1);
+          wordVariations.set(withoutY + 'ies', wordInfo);
+        }
+        // Special cases for -es endings
+        else if (wordLower.endsWith('s') || wordLower.endsWith('sh') || 
+                wordLower.endsWith('ch') || wordLower.endsWith('x') || 
+                wordLower.endsWith('z')) {
+          wordVariations.set(wordLower + 'es', wordInfo);
+        }
+      }
+      
+      // Add past tense (-ed) variations
+      if (wordLower.length > 3) { // Only add if word is long enough
+        // Regular -ed
+        wordVariations.set(wordLower + 'ed', wordInfo);
+        
+        // For words ending in 'e', just add 'd'
+        if (wordLower.endsWith('e')) {
+          wordVariations.set(wordLower + 'd', wordInfo);
+        }
+        // For words ending in consonant + y, change y to ied
+        else if (wordLower.endsWith('y') && 
+                wordLower.length > 1 && 
+                !['a','e','i','o','u'].includes(wordLower[wordLower.length - 2])) {
+          wordVariations.set(wordLower.slice(0, -1) + 'ied', wordInfo);
+        }
+        // For words ending in consonant + consonant, double the last consonant
+        else if (wordLower.length > 2 && 
+                !['a','e','i','o','u'].includes(wordLower[wordLower.length - 1]) && 
+                !['a','e','i','o','u'].includes(wordLower[wordLower.length - 2])) {
+          wordVariations.set(wordLower + wordLower[wordLower.length - 1] + 'ed', wordInfo);
+        }
+      }
+      
+      // Add singular variations if the word is plural
+      if (wordLower.endsWith('s')) {
+        if (wordLower.endsWith('ies')) {
+          const singular = wordLower.slice(0, -3) + 'y';
+          wordVariations.set(singular, wordInfo);
+        } else if (wordLower.endsWith('es')) {
+          const singular = wordLower.slice(0, -2);
+          wordVariations.set(singular, wordInfo);
+        } else {
+          const singular = wordLower.slice(0, -1);
+          if (singular.length > 2) { // Only add if resulting word is long enough
+            wordVariations.set(singular, wordInfo);
+          }
+        }
+      }
+      
+      // Add base form if word is in past tense
+      if (wordLower.endsWith('ed') && wordLower.length > 4) {
+        // Handle doubled consonant (e.g., stopped -> stop)
+        if (wordLower.length > 5 && 
+            wordLower[wordLower.length - 3] === wordLower[wordLower.length - 4]) {
+          wordVariations.set(wordLower.slice(0, -3), wordInfo);
+        }
+        // Handle -ied ending (e.g., replied -> reply)
+        else if (wordLower.endsWith('ied')) {
+          wordVariations.set(wordLower.slice(0, -3) + 'y', wordInfo);
+        }
+        // Regular -ed ending
+        else {
+          wordVariations.set(wordLower.slice(0, -2), wordInfo);
+          // Also try removing just 'd' for words ending in 'e'
+          wordVariations.set(wordLower.slice(0, -1), wordInfo);
+        }
+      }
     });
+
+    // Create pattern with word boundaries
+    const wordPattern = Array.from(wordVariations.keys())
+      .sort((a, b) => b.length - a.length) // Sort by length to match longer words first
+      .map(word => {
+        // Escape special regex characters
+        const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return `\\b${escaped}\\b`;
+      })
+      .join('|');
+
+    const regex = new RegExp(wordPattern, 'gi');
+    
+    const nodes = Array.from(textNodesUnder(document.body));
+    const CHUNK_SIZE = 50;
+    
+    for (let i = 0; i < nodes.length; i += CHUNK_SIZE) {
+      const chunk = nodes.slice(i, i + CHUNK_SIZE);
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          chunk.forEach(node => {
+            try {
+              highlightTextNode(node, regex, wordVariations);
+            } catch (error) {
+              console.warn('Error processing text node:', error);
+            }
+          });
+          resolve();
+        });
+      });
+    }
+  } catch (error) {
+    console.warn('Error in highlightWords:', error);
   }
 }
 
 // Function to highlight text node
-function highlightTextNode(node, regex) {
-  const text = node.textContent;
-  if (!regex || !regex.test(text)) return;
+function highlightTextNode(node, regex, wordVariations) {
+  if (!node || !node.textContent || !regex) return;
+  
+  if (!regex.test(node.textContent)) return;
   
   regex.lastIndex = 0;
   const span = document.createElement('span');
-  span.innerHTML = text.replace(regex, (match) => {
+  span.innerHTML = node.textContent.replace(regex, (match) => {
     const matchLower = match.toLowerCase();
-    const wordInfo = wordData.get(matchLower);
+    const wordInfo = wordVariations.get(matchLower);
     
     if (wordInfo) {
       const backgroundColor = getHighlightColor(wordInfo.familiarity);
@@ -194,45 +294,45 @@ function highlightTextNode(node, regex) {
     return match;
   });
   
-  if (span.innerHTML !== text) {
-    node.parentNode.replaceChild(span, node);
-    
-    // Add hover handlers to new highlighted words
-    span.querySelectorAll('.highlighted-word:not([data-has-listener])').forEach(el => {
-      el.dataset.hasListener = 'true';
-      
-      el.addEventListener('mouseenter', (e) => {
-        e.stopPropagation(); // Stop event bubbling
+  if (span.innerHTML !== node.textContent) {
+    try {
+      if (node.parentNode && document.contains(node.parentNode)) {
+        node.parentNode.replaceChild(span, node);
         
-        // Check if this word is inside a popup
-        if (e.target.closest('.word-popup')) {
-          return; // Don't create popup for words inside popups
-        }
-        
-        currentHighlightedElement = el;
-        if (hoverTimer) {
-          clearTimeout(hoverTimer);
-          hoverTimer = null;
-        }
-        const rect = el.getBoundingClientRect();
-        const originalWord = el.dataset.original;
-        createWordPopup(originalWord, rect);
-      });
+        // Add hover handlers to new highlighted words
+        span.querySelectorAll('.highlighted-word:not([data-has-listener])').forEach(el => {
+          el.dataset.hasListener = 'true';
+          
+          el.addEventListener('mouseenter', (e) => {
+            e.stopPropagation();
+            if (e.target.closest('.word-popup')) return;
+            
+            currentHighlightedElement = el;
+            if (hoverTimer) {
+              clearTimeout(hoverTimer);
+              hoverTimer = null;
+            }
+            const rect = el.getBoundingClientRect();
+            const originalWord = el.dataset.original;
+            createWordPopup(originalWord, rect);
+          });
 
-      el.addEventListener('mouseleave', (e) => {
-        e.stopPropagation(); // Stop event bubbling
-        // Only remove popup if we're not hovering a word inside a popup
-        if (!e.target.closest('.word-popup')) {
-          removePopupWithDelay();
-        }
-      });
+          el.addEventListener('mouseleave', (e) => {
+            e.stopPropagation();
+            if (!e.target.closest('.word-popup')) {
+              removePopupWithDelay();
+            }
+          });
 
-      // Prevent link clicks when clicking highlighted words in links
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      });
-    });
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          });
+        });
+      }
+    } catch (error) {
+      console.warn('Error highlighting text node:', error);
+    }
   }
 }
 
