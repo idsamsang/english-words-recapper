@@ -158,6 +158,26 @@ async function highlightWords(words) {
       // Add original word and its lowercase version
       wordVariations.set(wordLower, wordInfo);
       
+      // Add adverb form (-ly)
+      if (wordLower.length > 2) {
+        // For words ending in 'y', change y to i before adding ly
+        if (wordLower.endsWith('y')) {
+          wordVariations.set(wordLower.slice(0, -1) + 'ily', wordInfo);
+        }
+        // For words ending in 'le', change le to ly
+        else if (wordLower.endsWith('le')) {
+          wordVariations.set(wordLower.slice(0, -2) + 'ly', wordInfo);
+        }
+        // For words ending in 'ic', add ally
+        else if (wordLower.endsWith('ic')) {
+          wordVariations.set(wordLower + 'ally', wordInfo);
+        }
+        // Regular -ly ending
+        else {
+          wordVariations.set(wordLower + 'ly', wordInfo);
+        }
+      }
+      
       // Add plural variations
       if (!wordLower.endsWith('s')) {
         // Regular plural
@@ -231,6 +251,22 @@ async function highlightWords(words) {
           wordVariations.set(wordLower.slice(0, -2), wordInfo);
           // Also try removing just 'd' for words ending in 'e'
           wordVariations.set(wordLower.slice(0, -1), wordInfo);
+        }
+      }
+      
+      // Add base form if word is adverb
+      if (wordLower.endsWith('ly') && wordLower.length > 4) {
+        // Handle -ily ending (e.g., happily -> happy)
+        if (wordLower.endsWith('ily')) {
+          wordVariations.set(wordLower.slice(0, -3) + 'y', wordInfo);
+        }
+        // Handle -ally ending (e.g., dramatically -> dramatic)
+        else if (wordLower.endsWith('ally')) {
+          wordVariations.set(wordLower.slice(0, -4), wordInfo);
+        }
+        // Regular -ly ending
+        else {
+          wordVariations.set(wordLower.slice(0, -2), wordInfo);
         }
       }
     });
